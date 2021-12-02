@@ -1,39 +1,11 @@
----
-title: "Statistical Learning"
-output: github_document
----
-
-```{r setup, include = FALSE}
-library(tidyverse)
-library(glmnet)
-
-knitr::opts_chunk$set(
-  echo = TRUE,
-  warning = FALSE,
-  fig.width = 8,
-  fig.height = 6,
-  out.width = "90%"
-)
-
-theme_set(theme_minimal() + theme(legend.position = "bottom"))
-
-options(
-  ggplot2.continuous.colour = "viridis",
-  ggplot2.continuous.fill = "viridis"
-)
-
-scale_colour_discrete = scale_colour_viridis_d
-scale_fill_discrete = scale_fill_viridis_d
-
-set.seed(11)
-```
-
+Statistical Learning
+================
 
 ## Lasso
 
 Predicting birthweight
 
-```{r}
+``` r
 bwt_df = 
   read_csv("extra_topic_data/birthweight.csv") %>%
   mutate(
@@ -49,17 +21,26 @@ bwt_df =
   sample_n(200)
 ```
 
-Let's just do the lasso and move on.
+    ## Rows: 4342 Columns: 20
 
-```{r}
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## dbl (20): babysex, bhead, blength, bwt, delwt, fincome, frace, gaweeks, malf...
+
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+Let’s just do the lasso and move on.
+
+``` r
 y = bwt_df %>% pull(bwt)
 x = model.matrix(bwt ~ ., bwt_df)[, -1]
 ```
 
+Let’s fit lasso.
 
-Let's fit lasso.
-
-```{r}
+``` r
 lambda_grid = 10 ^ seq(3, -2, by = -0.1)
 
 lasso_fit = glmnet(x, y, lambda = lambda_grid)
@@ -69,9 +50,9 @@ lasso_cv = cv.glmnet(x, y, lambda = lambda_grid)
 lambda_opt = lasso_cv$lambda.min
 ```
 
-Can we actually see what we did ...?
+Can we actually see what we did …?
 
-```{r}
+``` r
 lasso_fit %>% 
   broom::tidy() %>% 
   complete(term, lambda, fill = list(estimate = 0)) %>% 
@@ -81,35 +62,51 @@ lasso_fit %>%
   geom_vline(xintercept = log(lambda_opt ))
 ```
 
+<img src="stat_learning_files/figure-gfm/unnamed-chunk-4-1.png" width="90%" />
 
 ## Cluster pokemons
 
-```{r}
+``` r
 pokemon_df = 
   read_csv("extra_topic_data/pokemon.csv") %>% 
   janitor::clean_names() %>% 
   select(speed, hp)
 ```
 
+    ## Rows: 800 Columns: 13
+
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (3): Name, Type 1, Type 2
+    ## dbl (9): #, Total, HP, Attack, Defense, Sp. Atk, Sp. Def, Speed, Generation
+    ## lgl (1): Legendary
+
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
 Take a quick look at our pokemons
 
-```{r}
+``` r
 pokemon_df %>% 
   ggplot(aes(x = hp, y = speed)) + 
   geom_point()
 ```
 
+<img src="stat_learning_files/figure-gfm/unnamed-chunk-6-1.png" width="90%" />
+
 Use K-means to identify clusters.
 
-```{r}
+``` r
 kmeans_fit = 
   kmeans(x = pokemon_df, centers = 3)
 ```
 
-```{r}
+``` r
 pokemon_df %>% 
   broom::augment(kmeans_fit, .) %>% 
   ggplot(aes(x = hp, y = speed, color = .cluster)) +
   geom_point()
 ```
 
+<img src="stat_learning_files/figure-gfm/unnamed-chunk-8-1.png" width="90%" />
